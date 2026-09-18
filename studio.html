@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Host Studio – Luna Stream</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #060810;
+      --bg2: #0b0e1a;
+      --surface: #0f1422;
+      --surface2: #141928;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.16);
+      --accent: #9B59FF;
+      --accent2: #5B8FFF;
+      --green: #2dd4bf;
+      --red: #f87171;
+      --text: #dde1f0;
+      --muted: #5a6070;
+      --muted2: #8892a4;
+      --radius: 18px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(140px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(155, 89, 255, 0.14), transparent 70%);
+      top: -120px; left: -100px;
+    }
+    body::after {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(91, 143, 255, 0.10), transparent 70%);
+      bottom: -100px; right: -80px;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 20px 40px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 18px rgba(155, 89, 255, 0.35);
+    }
+    .brand-text h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .timer-pill {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-family: 'Syne', monospace;
+      font-size: 0.85rem;
+      color: var(--muted2);
+    }
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(248, 113, 113, 0.12);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      color: var(--red);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 12px;
+      border-radius: 99px;
+    }
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.85); }
+    }
+
+    .player-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    .meta-bar {
+      margin-top: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .stream-info h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .stream-sub {
+      font-size: 0.85rem;
+      color: var(--muted2);
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 11px 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn:hover {
+      border-color: var(--accent);
+      background: rgba(155, 89, 255, 0.1);
+      transform: translateY(-1px);
+    }
+    .btn-danger {
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.25);
+      color: var(--red);
+    }
+    .btn-danger:hover {
+      background: var(--red);
+      color: #fff;
+      border-color: var(--red);
+      box-shadow: 0 4px 20px rgba(248, 113, 113, 0.35);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(45, 212, 191, 0.15);
+      border: 1px solid var(--green);
+      color: var(--green);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 12px 20px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+      transition: all 0.25s ease;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* Overlay when stream ends */
+    .ended-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(6, 8, 16, 0.94);
+      backdrop-filter: blur(16px);
+      z-index: 50;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+    }
+    .ended-overlay h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .ended-overlay p {
+      color: var(--muted2);
+      font-size: 0.95rem;
+      max-width: 400px;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="brand-icon">🌙</div>
+        <div class="brand-text">
+          <h1>Luna Host Studio</h1>
+        </div>
+      </div>
+      <div class="header-status">
+        <div class="timer-pill" id="uptimeTimer">00:00:00</div>
+        <div class="live-badge">
+          <span class="live-dot"></span> On Air
+        </div>
+      </div>
+    </header>
+
+    <div class="player-wrap">
+      <div class="ended-overlay" id="endedOverlay">
+        <h2>Broadcast Ended</h2>
+        <p>Your screen share session has concluded and Discord has been updated.</p>
+        <button class="btn" onclick="window.close()">Close Window</button>
+      </div>
+      <iframe
+        id="hostFrame"
+        allow="autoplay; camera; microphone; fullscreen; display-capture; picture-in-picture"
+        allowfullscreen>
+      </iframe>
+    </div>
+
+    <div class="meta-bar">
+      <div class="stream-info">
+        <h2 id="streamTitle">Live Stream Studio</h2>
+        <div class="stream-sub">
+          Room: <code id="roomId" style="color:var(--accent2)">...</code> &bull; Only you have access to this studio
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="copyViewerBtn">📋 Copy Viewer Link</button>
+        <button class="btn btn-danger" id="endStreamBtn">⏹️ End Stream & Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Viewer link copied to clipboard!</div>
+
+  <script>
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const room = params.get('room');
+      const title = params.get('title') || 'Live Stream';
+      const webhookUrl = params.get('wh');
+      const viewerUrl = params.get('viewer');
+
+      const hostFrame = document.getElementById('hostFrame');
+      const streamTitle = document.getElementById('streamTitle');
+      const roomIdEl = document.getElementById('roomId');
+      const copyViewerBtn = document.getElementById('copyViewerBtn');
+      const endStreamBtn = document.getElementById('endStreamBtn');
+      const endedOverlay = document.getElementById('endedOverlay');
+      const toast = document.getElementById('toast');
+      const timerEl = document.getElementById('uptimeTimer');
+
+      if (!room) {
+        document.body.innerHTML = '<h2 style="color:#fff;text-align:center;margin-top:50px;">Invalid Studio URL</h2>';
+        return;
+      }
+
+      streamTitle.textContent = title;
+      roomIdEl.textContent = room;
+      document.title = `Studio: ${title} – Luna`;
+
+      // VDO.Ninja clean push embedded iframe
+      const ninjaPush = `https://vdo.ninja/?push=${encodeURIComponent(room)}&screenshare=1&audio=1&autostart=1&cleanoutput=1&transparent=1`;
+      hostFrame.src = ninjaPush;
+
+      // Timer
+      let seconds = 0;
+      setInterval(() => {
+        seconds++;
+        const hrs = String(Math.floor(seconds / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+        const secs = String(seconds % 60).padStart(2, '0');
+        timerEl.textContent = `${hrs}:${mins}:${secs}`;
+      }, 1000);
+
+      // Notify Discord via Webhook
+      let hasEnded = false;
+      function notifyDiscordStreamEnded() {
+        if (!webhookUrl || hasEnded) return;
+        hasEnded = true;
+
+        const payload = JSON.stringify({
+          content: `luna:stream_ended:${room}`
+        });
+
+        // sendBeacon ensures delivery even if the tab is closing
+        if (navigator.sendBeacon) {
+          const blob = new Blob([payload], { type: 'application/json' });
+          navigator.sendBeacon(webhookUrl, blob);
+        } else {
+          fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+            keepalive: true
+          });
+        }
+      }
+
+      function showEnded() {
+        endedOverlay.style.display = 'flex';
+      }
+
+      // 1. Host clicks "End Stream" button
+      endStreamBtn.addEventListener('click', () => {
+        notifyDiscordStreamEnded();
+        showEnded();
+      });
+
+      // 2. Host closes the browser tab or navigates away
+      window.addEventListener('pagehide', notifyDiscordStreamEnded);
+      window.addEventListener('beforeunload', notifyDiscordStreamEnded);
+
+      // 3. VDO.Ninja iframe detects that screen sharing stopped
+      window.addEventListener('message', (event) => {
+        if (event.data) {
+          const d = event.data;
+          // VDO.Ninja emits these actions when screen share stops or hangs up
+          if (
+            (d.action === "push-connection" && d.value === false) ||
+            d.action === "hangup" ||
+            d.action === "stopped" ||
+            d.close === true
+          ) {
+            notifyDiscordStreamEnded();
+            showEnded();
+          }
+        }
+      });
+
+      // Copy viewer link
+      copyViewerBtn.addEventListener('click', () => {
+        if (viewerUrl) {
+          navigator.clipboard.writeText(viewerUrl).then(() => {
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+          });
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
