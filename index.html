@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Luna Stream</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #060810;
+      --bg2: #0b0e1a;
+      --surface: #0f1422;
+      --surface2: #141928;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.16);
+      --accent: #9B59FF;
+      --accent2: #5B8FFF;
+      --green: #2dd4bf;
+      --red: #f87171;
+      --text: #dde1f0;
+      --muted: #5a6070;
+      --muted2: #8892a4;
+      --radius: 18px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* Ambient background glows */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(140px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(155, 89, 255, 0.14), transparent 70%);
+      top: -120px; left: -100px;
+    }
+    body::after {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(91, 143, 255, 0.10), transparent 70%);
+      bottom: -100px; right: -80px;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 20px 40px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    /* Header Bar */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 18px rgba(155, 89, 255, 0.35);
+    }
+    .brand-text h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(248, 113, 113, 0.12);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      color: var(--red);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 12px;
+      border-radius: 99px;
+    }
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.85); }
+    }
+
+    /* Video Player Viewport */
+    .player-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* Audio alert banner */
+    .audio-banner {
+      display: none;
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 20, 34, 0.88);
+      border: 1px solid var(--accent);
+      backdrop-filter: blur(12px);
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      color: #fff;
+      z-index: 10;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    /* Stream Meta & Control Bar */
+    .meta-bar {
+      margin-top: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .stream-info h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .stream-host {
+      font-size: 0.85rem;
+      color: var(--muted2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .host-pill {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn:hover {
+      border-color: var(--accent);
+      background: rgba(155, 89, 255, 0.1);
+      transform: translateY(-1px);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      color: #fff;
+    }
+    .btn-primary:hover {
+      box-shadow: 0 4px 20px rgba(155, 89, 255, 0.35);
+    }
+
+    /* Error / Empty state */
+    .empty-state {
+      display: none;
+      margin: auto 0;
+      padding: 60px 24px;
+      text-align: center;
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+    }
+    .empty-state h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.4rem;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    .empty-state p {
+      color: var(--muted2);
+      font-size: 0.95rem;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(45, 212, 191, 0.15);
+      border: 1px solid var(--green);
+      color: var(--green);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 12px 20px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+      transition: all 0.25s ease;
+      z-index: 100;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <a href="#" class="brand">
+        <div class="brand-icon">🌙</div>
+        <div class="brand-text">
+          <h1>Luna Stream</h1>
+        </div>
+      </a>
+      <div id="liveBadge" class="live-badge" style="display: none;">
+        <span class="live-dot"></span> P2P Live
+      </div>
+    </header>
+
+    <!-- Error/Empty State Container -->
+    <div id="emptyState" class="empty-state">
+      <h3>No Stream Selected</h3>
+      <p>Use the <code>/screenshare</code> slash command in Discord to generate a live peer-to-peer streaming room.</p>
+    </div>
+
+    <!-- Active Stream Elements -->
+    <main id="streamContainer" style="display: none;">
+      <div class="player-wrap" id="playerWrap">
+        <div class="audio-banner" id="audioBanner">
+          🔊 Audio may be muted by browser policy. Click here or inside the video to unmute.
+        </div>
+        <iframe
+          id="streamFrame"
+          allow="autoplay; camera; microphone; fullscreen; display-capture; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+
+      <div class="meta-bar">
+        <div class="stream-info">
+          <h2 id="streamTitle">Live Screen Share</h2>
+          <div class="stream-host">
+            Host: <span id="hostName" class="host-pill">Unknown</span> &bull; WebRTC Direct P2P
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" id="copyBtn">📋 Copy Link</button>
+          <button class="btn btn-primary" id="fullscreenBtn">⛶ Fullscreen</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast" class="toast">Link copied to clipboard!</div>
+
+  <script>
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const room = params.get('room');
+      const title = params.get('title') || 'Live Screen Share';
+      const host = params.get('host') || 'Discord Member';
+
+      const emptyState = document.getElementById('emptyState');
+      const streamContainer = document.getElementById('streamContainer');
+      const liveBadge = document.getElementById('liveBadge');
+      const streamFrame = document.getElementById('streamFrame');
+      const streamTitle = document.getElementById('streamTitle');
+      const hostName = document.getElementById('hostName');
+      const playerWrap = document.getElementById('playerWrap');
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
+      const copyBtn = document.getElementById('copyBtn');
+      const toast = document.getElementById('toast');
+      const audioBanner = document.getElementById('audioBanner');
+
+      // Room validation: alphanumeric and underscore only
+      const safeRoomRegex = /^[a-zA-Z0-9_\-]+$/;
+
+      if (!room || !safeRoomRegex.test(room)) {
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      // Safe DOM injection
+      streamTitle.textContent = title;
+      hostName.textContent = host;
+      document.title = `${title} – Luna Stream`;
+
+      // VDO.Ninja P2P Viewer URL
+      const ninjaViewer = `https://vdo.ninja/?view=${encodeURIComponent(room)}&cleanviewer&transparent=1&autoplay=1`;
+      streamFrame.src = ninjaViewer;
+
+      streamContainer.style.display = 'block';
+      liveBadge.style.display = 'inline-flex';
+
+      // Inform users of browser autoplay policy
+      setTimeout(() => {
+        audioBanner.style.display = 'block';
+      }, 2500);
+
+      audioBanner.addEventListener('click', () => {
+        audioBanner.style.display = 'none';
+      });
+
+      // Fullscreen handling
+      fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          playerWrap.requestFullscreen().catch(err => {
+            console.error(`Fullscreen request failed: ${err.message}`);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      });
+
+      // Copy link toast
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          toast.classList.add('show');
+          setTimeout(() => toast.classList.remove('show'), 2500);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
